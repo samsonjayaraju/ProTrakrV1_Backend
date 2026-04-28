@@ -11,7 +11,6 @@ public record ApiError(
 ) //api
 {
     public static ApiError of(String message, Map<String, Object> details) {
-        return new ApiError(false, message, Details, Instant.now());
+        return new ApiError(false, message, details, Instant.now());
     }
 }
-
