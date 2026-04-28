@@ -28,8 +28,23 @@ public final class DtoMapper {
     }
 
     public static UserDto userDto(User u) {
+        String fullName = u.getFullName() == null ? "" : u.getFullName().trim();
+        String firstName = null;
+        String lastName = null;
+        if (!fullName.isBlank()) {
+            int idx = fullName.indexOf(' ');
+            if (idx < 0) {
+                firstName = fullName;
+                lastName = "";
+            } else {
+                firstName = fullName.substring(0, idx).trim();
+                lastName = fullName.substring(idx + 1).trim();
+            }
+        }
         return new UserDto(
                 u.getId(),
+                firstName,
+                lastName,
                 u.getFullName(),
                 u.getEmail(),
                 u.getRole().dbValue(),
@@ -115,4 +130,3 @@ public final class DtoMapper {
         );
     }
 }
-

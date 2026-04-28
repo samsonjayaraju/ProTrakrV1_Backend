@@ -6,6 +6,10 @@ import jakarta.validation.constraints.Size;
 public record UpdateProfileRequest(
         @JsonAlias({"full_name", "name", "fullname"})
         @Size(max = 255) String fullName,
+        @JsonAlias({"first_name", "firstName"})
+        @Size(max = 100) String firstName,
+        @JsonAlias({"last_name", "lastName"})
+        @Size(max = 155) String lastName,
         @Size(max = 100) String department,
         Integer year,
         @JsonAlias({"roll_number"})

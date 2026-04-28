@@ -6,13 +6,15 @@ import com.klup.protrackr.dto.auth.AuthResponse;
 import com.klup.protrackr.dto.auth.LoginRequest;
 import com.klup.protrackr.dto.auth.RegisterRequest;
 import com.klup.protrackr.exception.BadRequestException;
-import com.klup.protrackr.mapper.DtoMapper;
+import com.klup.protrackr.mapper.AuthMapper;
 import com.klup.protrackr.repo.UserRepository;
 import com.klup.protrackr.security.JwtService;
 import com.klup.protrackr.security.UserPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @Service
 public class AuthService {
@@ -35,7 +37,7 @@ public class AuthService {
         u.setFullName(req.fullName());
         u.setEmail(req.email().trim().toLowerCase());
         u.setPasswordHash(passwordEncoder.encode(req.password()));
-        u.setRole(UserRole.STUDENT);
+        u.setRole(parseRole(req.role()));
         u.setDepartment(req.department());
         u.setYear(req.year());
         u.setRollNumber(req.rollNumber());
@@ -43,7 +45,7 @@ public class AuthService {
 
         UserPrincipal principal = UserPrincipal.fromUser(saved);
         String token = jwtService.generateToken(principal);
-        return new AuthResponse(token, DtoMapper.userDto(saved));
+        return new AuthResponse(token, AuthMapper.authUser(saved));
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +57,17 @@ public class AuthService {
         }
         UserPrincipal principal = UserPrincipal.fromUser(u);
         String token = jwtService.generateToken(principal);
-        return new AuthResponse(token, DtoMapper.userDto(u));
+        return new AuthResponse(token, AuthMapper.authUser(u));
+    }
+
+    private static UserRole parseRole(String role) {
+        if (role == null || role.isBlank()) return UserRole.STUDENT;
+        String r = role.trim().toLowerCase(Locale.ROOT);
+        return switch (r) {
+            case "student" -> UserRole.STUDENT;
+            case "faculty" -> UserRole.FACULTY;
+            case "admin" -> UserRole.ADMIN;
+            default -> throw new BadRequestException("Invalid role: " + role);
+        };
     }
 }
-

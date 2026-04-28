@@ -2,7 +2,9 @@ package com.klup.protrackr.controller;
 
 import com.klup.protrackr.api.ApiResponse;
 import com.klup.protrackr.dto.project.ProjectCreateRequest;
+import com.klup.protrackr.dto.project.ProjectListResponse;
 import com.klup.protrackr.dto.project.ProjectUpdateRequest;
+import com.klup.protrackr.dto.project.UpdateReviewStatusRequest;
 import com.klup.protrackr.security.CurrentUser;
 import com.klup.protrackr.service.ProjectService;
 import jakarta.validation.Valid;
@@ -27,7 +29,7 @@ public class ProjectController {
     @GetMapping
     public ApiResponse<?> list() {
         var principal = CurrentUser.require();
-        return ApiResponse.ok(projectService.listProjectDtos(principal));
+        return ApiResponse.ok(new ProjectListResponse(projectService.listProjectDtos(principal)));
     }
 
     @PostMapping
@@ -42,10 +44,22 @@ public class ProjectController {
         return ApiResponse.ok(projectService.getProjectDto(principal, id));
     }
 
+    @GetMapping("/{id}/details")
+    public ApiResponse<?> details(@PathVariable Long id) {
+        var principal = CurrentUser.require();
+        return ApiResponse.ok(projectService.getProjectDetails(principal, id));
+    }
+
     @PutMapping("/{id}")
     public ApiResponse<?> update(@PathVariable Long id, @Valid @RequestBody ProjectUpdateRequest req) {
         var principal = CurrentUser.require();
         return ApiResponse.ok(projectService.updateProjectDto(principal, id, req));
+    }
+
+    @PutMapping("/{id}/review-status")
+    public ApiResponse<?> updateReviewStatus(@PathVariable Long id, @Valid @RequestBody UpdateReviewStatusRequest req) {
+        var principal = CurrentUser.require();
+        return ApiResponse.ok(projectService.updateReviewStatus(principal, id, req.status()), "Review status updated");
     }
 
     @DeleteMapping("/{id}")

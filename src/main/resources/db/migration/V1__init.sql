@@ -98,3 +98,60 @@ CREATE TABLE IF NOT EXISTS project_media (
   KEY idx_project_media_project_id (project_id),
   KEY idx_project_media_uploader_id (uploader_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id BIGINT PRIMARY KEY,
+  project_updates_email BOOLEAN NOT NULL DEFAULT TRUE,
+  milestone_reminders_email BOOLEAN NOT NULL DEFAULT TRUE,
+  platform_announcements_email BOOLEAN NOT NULL DEFAULT TRUE,
+  CONSTRAINT fk_user_preferences_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS portfolio_profiles (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  headline VARCHAR(255),
+  linkedin_url VARCHAR(500),
+  website_url VARCHAR(500),
+  resume_url VARCHAR(1000),
+  public_profile_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  slug VARCHAR(64),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_portfolio_profiles_user_id (user_id),
+  UNIQUE KEY uk_portfolio_profiles_slug (slug),
+  CONSTRAINT fk_portfolio_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS skills (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(100),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_skills_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  KEY idx_skills_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS achievements (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  issuer VARCHAR(255),
+  date DATE,
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_achievements_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  KEY idx_achievements_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS portfolio_highlighted_projects (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  project_id BIGINT NOT NULL,
+  sort_order INT,
+  UNIQUE KEY uk_portfolio_highlighted_projects (user_id, project_id),
+  CONSTRAINT fk_portfolio_highlighted_projects_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_portfolio_highlighted_projects_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  KEY idx_portfolio_highlighted_projects_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

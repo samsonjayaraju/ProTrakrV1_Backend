@@ -1,12 +1,16 @@
 package com.klup.protrackr.service;
 
 import com.klup.protrackr.domain.User;
+import com.klup.protrackr.domain.UserPreferences;
 import com.klup.protrackr.dto.user.ChangePasswordRequest;
+import com.klup.protrackr.dto.user.UpdatePreferencesRequest;
 import com.klup.protrackr.dto.user.UpdateProfileRequest;
+import com.klup.protrackr.dto.user.UserPreferencesDto;
 import com.klup.protrackr.exception.BadRequestException;
 import com.klup.protrackr.exception.ForbiddenException;
 import com.klup.protrackr.exception.NotFoundException;
 import com.klup.protrackr.repo.UserRepository;
+import com.klup.protrackr.repo.UserPreferencesRepository;
 import com.klup.protrackr.security.UserPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,10 +21,12 @@ import java.util.List;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final UserPreferencesRepository userPreferencesRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, UserPreferencesRepository userPreferencesRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.userPreferencesRepository = userPreferencesRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -42,7 +48,14 @@ public class UserService {
     @Transactional
     public User updateProfile(UserPrincipal principal, UpdateProfileRequest req) {
         User u = requireCurrentUserEntity(principal);
-        if (req.fullName() != null) u.setFullName(req.fullName());
+        if (req.fullName() != null) {
+            u.setFullName(req.fullName());
+        } else if (req.firstName() != null || req.lastName() != null) {
+            String fn = req.firstName() == null ? "" : req.firstName().trim();
+            String ln = req.lastName() == null ? "" : req.lastName().trim();
+            String merged = (fn + " " + ln).trim().replaceAll("\\s+", " ");
+            if (!merged.isBlank()) u.setFullName(merged);
+        }
         if (req.department() != null) u.setDepartment(req.department());
         if (req.year() != null) u.setYear(req.year());
         if (req.rollNumber() != null) u.setRollNumber(req.rollNumber());
@@ -73,5 +86,42 @@ public class UserService {
         }
         return requireUserEntity(userId);
     }
-}
 
+    @Transactional
+    public UserPreferencesDto getPreferences(UserPrincipal principal) {
+        User u = requireCurrentUserEntity(principal);
+        UserPreferences p = userPreferencesRepository.findById(u.getId())
+                .orElseGet(() -> {
+                    UserPreferences created = new UserPreferences();
+                    created.setUserId(u.getId());
+                    return userPreferencesRepository.save(created);
+                });
+        return new UserPreferencesDto(
+                p.getProjectUpdatesEmail(),
+                p.getMilestoneRemindersEmail(),
+                p.getPlatformAnnouncementsEmail(),
+                u.getPortfolioPublic()
+        );
+    }
+
+    @Transactional
+    public UserPreferencesDto updatePreferences(UserPrincipal principal, UpdatePreferencesRequest req) {
+        User u = requireCurrentUserEntity(principal);
+        UserPreferences p = userPreferencesRepository.findById(u.getId())
+                .orElseGet(() -> {
+                    UserPreferences created = new UserPreferences();
+                    created.setUserId(u.getId());
+                    return created;
+                });
+        if (req.projectUpdatesEmail() != null) p.setProjectUpdatesEmail(req.projectUpdatesEmail());
+        if (req.milestoneRemindersEmail() != null) p.setMilestoneRemindersEmail(req.milestoneRemindersEmail());
+        if (req.platformAnnouncementsEmail() != null) p.setPlatformAnnouncementsEmail(req.platformAnnouncementsEmail());
+        userPreferencesRepository.save(p);
+
+        if (req.publicPortfolioEnabled() != null) {
+            u.setPortfolioPublic(req.publicPortfolioEnabled());
+            userRepository.save(u);
+        }
+        return getPreferences(principal);
+    }
+}

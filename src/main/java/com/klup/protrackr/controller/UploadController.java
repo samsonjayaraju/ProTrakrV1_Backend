@@ -29,6 +29,12 @@ public class UploadController {
         return ApiResponse.ok(uploadService.uploadAvatar(principal, file), "Avatar updated");
     }
 
+    @PostMapping(value = "/resume", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<?> uploadResume(@RequestPart("file") @NotNull MultipartFile file) {
+        var principal = CurrentUser.require();
+        return ApiResponse.ok(uploadService.uploadResume(principal, file), "Resume updated");
+    }
+
     @GetMapping("/projects/{projectId}")
     public ApiResponse<?> listProjectMedia(@PathVariable Long projectId) {
         var principal = CurrentUser.require();

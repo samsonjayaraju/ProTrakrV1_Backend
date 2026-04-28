@@ -4,6 +4,8 @@ import java.time.Instant;
 
 public record UserDto(
         Long id,
+        String firstName,
+        String lastName,
         String fullName,
         String email,
         String role,
@@ -18,4 +20,3 @@ public record UserDto(
         Instant createdAt,
         Instant updatedAt
 ) {}
-

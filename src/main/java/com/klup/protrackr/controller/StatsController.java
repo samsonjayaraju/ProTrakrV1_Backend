@@ -24,17 +24,16 @@ public class StatsController {
     }
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','FACULTY')")
     public ApiResponse<?> admin() {
         var principal = CurrentUser.require();
         return ApiResponse.ok(statsService.adminStats(principal));
     }
 
     @GetMapping("/reports")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','FACULTY')")
     public ApiResponse<?> reports() {
         var principal = CurrentUser.require();
         return ApiResponse.ok(statsService.reports(principal));
     }
 }
-

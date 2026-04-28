@@ -4,6 +4,8 @@ import com.klup.protrackr.exception.ForbiddenException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Optional;
+
 public final class CurrentUser {
     private CurrentUser() {}
 
@@ -14,5 +16,12 @@ public final class CurrentUser {
         }
         return up;
     }
-}
 
+    public static Optional<UserPrincipal> optional() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserPrincipal up)) {
+            return Optional.empty();
+        }
+        return Optional.of(up);
+    }
+}

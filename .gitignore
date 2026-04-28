@@ -38,3 +38,4 @@ server/uploads-test/
 
 # Local Spring config (secrets)
 src/main/resources/application-local.properties
+application-local.properties

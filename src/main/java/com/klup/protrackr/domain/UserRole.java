@@ -4,6 +4,7 @@ import java.util.Locale;
 
 public enum UserRole {
     STUDENT("student"),
+    FACULTY("faculty"),
     ADMIN("admin");
 
     private final String dbValue;
@@ -21,9 +22,9 @@ public enum UserRole {
         String v = value.trim().toLowerCase(Locale.ROOT);
         return switch (v) {
             case "student" -> STUDENT;
+            case "faculty" -> FACULTY;
             case "admin" -> ADMIN;
             default -> throw new IllegalArgumentException("Unknown role: " + value);
         };
     }
 }
-

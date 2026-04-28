@@ -28,6 +28,7 @@ public class UploadService {
     private final String publicBaseUrl;
     private final ProjectService projectService;
     private final UserService userService;
+    private final PortfolioService portfolioService;
     private final ProjectMediaRepository projectMediaRepository;
 
     public UploadService(
@@ -35,12 +36,14 @@ public class UploadService {
             @Value("${app.upload.public-base-url}") String publicBaseUrl,
             ProjectService projectService,
             UserService userService,
+            PortfolioService portfolioService,
             ProjectMediaRepository projectMediaRepository
     ) {
         this.uploadDir = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.publicBaseUrl = publicBaseUrl.startsWith("/") ? publicBaseUrl : "/" + publicBaseUrl;
         this.projectService = projectService;
         this.userService = userService;
+        this.portfolioService = portfolioService;
         this.projectMediaRepository = projectMediaRepository;
     }
 
@@ -61,9 +64,26 @@ public class UploadService {
         return DtoMapper.userDto(u);
     }
 
+    @Transactional
+    public java.util.Map<String, Object> uploadResume(UserPrincipal principal, MultipartFile file) {
+        if (file == null || file.isEmpty()) throw new BadRequestException("File is required");
+        User u = userService.requireCurrentUserEntity(principal);
+
+        String cleanName = sanitizeFilename(file.getOriginalFilename());
+        String storedName = UUID.randomUUID() + "_" + cleanName;
+        Path targetDir = uploadDir.resolve("resumes").resolve(String.valueOf(u.getId()));
+        Path target = targetDir.resolve(storedName);
+
+        writeFile(targetDir, target, file);
+
+        String url = publicBaseUrl + "/resumes/" + u.getId() + "/" + storedName;
+        portfolioService.setResumeUrl(principal, url);
+        return java.util.Map.of("resumeUrl", url);
+    }
+
     @Transactional(readOnly = true)
     public List<ProjectMediaDto> listProjectMedia(UserPrincipal principal, Long projectId) {
-        Project p = projectService.getProject(principal, projectId);
+        Project p = projectService.getProjectForTeamAccess(principal, projectId);
         return projectMediaRepository.findByProjectIdOrderByCreatedAtDesc(p.getId())
                 .stream()
                 .map(DtoMapper::projectMediaDto)
@@ -73,7 +93,7 @@ public class UploadService {
     @Transactional
     public ProjectMediaDto uploadProjectMedia(UserPrincipal principal, Long projectId, MultipartFile file) {
         if (file == null || file.isEmpty()) throw new BadRequestException("File is required");
-        Project p = projectService.getProject(principal, projectId);
+        Project p = projectService.getProjectForTeamAccess(principal, projectId);
         User uploader = userService.requireCurrentUserEntity(principal);
 
         String cleanName = sanitizeFilename(file.getOriginalFilename());
@@ -99,7 +119,7 @@ public class UploadService {
     public void deleteMedia(UserPrincipal principal, Long mediaId) {
         ProjectMedia media = projectMediaRepository.findById(mediaId)
                 .orElseThrow(() -> new NotFoundException("Media not found"));
-        projectService.getProject(principal, media.getProject().getId());
+        projectService.getProjectForTeamAccess(principal, media.getProject().getId());
 
         // Delete file on disk (best-effort)
         try {

@@ -30,7 +30,7 @@ public class FeedbackService {
     }
 
     private boolean isAdmin(UserPrincipal principal) {
-        return principal.getRole() == UserRole.ADMIN;
+        return principal.getRole() == UserRole.ADMIN || principal.getRole() == UserRole.FACULTY;
     }
 
     @Transactional(readOnly = true)

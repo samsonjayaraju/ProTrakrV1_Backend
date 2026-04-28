@@ -3,6 +3,7 @@ package com.klup.protrackr.controller;
 import com.klup.protrackr.api.ApiResponse;
 import com.klup.protrackr.domain.UserRole;
 import com.klup.protrackr.dto.user.ChangePasswordRequest;
+import com.klup.protrackr.dto.user.UpdatePreferencesRequest;
 import com.klup.protrackr.dto.user.UpdateProfileRequest;
 import com.klup.protrackr.mapper.DtoMapper;
 import com.klup.protrackr.security.CurrentUser;
@@ -46,8 +47,20 @@ public class UserController {
         return ApiResponse.ok(null, "Password updated");
     }
 
+    @GetMapping("/preferences")
+    public ApiResponse<?> getPreferences() {
+        var principal = CurrentUser.require();
+        return ApiResponse.ok(userService.getPreferences(principal));
+    }
+
+    @PutMapping("/preferences")
+    public ApiResponse<?> updatePreferences(@RequestBody UpdatePreferencesRequest req) {
+        var principal = CurrentUser.require();
+        return ApiResponse.ok(userService.updatePreferences(principal, req), "Preferences updated");
+    }
+
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','FACULTY')")
     public ApiResponse<?> allUsers() {
         return ApiResponse.ok(userService.getAllUsers().stream().map(DtoMapper::userDto).toList());
     }
@@ -55,9 +68,8 @@ public class UserController {
     @GetMapping("/{id}")
     public ApiResponse<?> getUser(@PathVariable Long id) {
         var principal = CurrentUser.require();
-        boolean isAdmin = principal.getRole() == UserRole.ADMIN;
-        var user = userService.getUserByIdWithAuth(principal, id, isAdmin);
+        boolean privileged = principal.getRole() == UserRole.ADMIN || principal.getRole() == UserRole.FACULTY;
+        var user = userService.getUserByIdWithAuth(principal, id, privileged);
         return ApiResponse.ok(DtoMapper.userDto(user));
     }
 }
-

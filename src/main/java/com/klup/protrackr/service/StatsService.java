@@ -50,11 +50,13 @@ public class StatsService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> adminStats(UserPrincipal principal) {
-        if (principal.getRole() != UserRole.ADMIN) throw new ForbiddenException("Admin only");
+        if (principal.getRole() != UserRole.ADMIN && principal.getRole() != UserRole.FACULTY) {
+            throw new ForbiddenException("Admin only");
+        }
         long users = userRepository.count();
         long projects = projectRepository.count();
         long reviews = reviewRepository.count();
-        long pendingReviews = reviewRepository.countByStatusIgnoreCase("pending");
+        long pendingReviews = reviewRepository.countByStatusIgnoreCase(AdminService.STATUS_PENDING_REVIEW);
 
         return Map.of(
                 "users", users,
@@ -66,11 +68,12 @@ public class StatsService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> reports(UserPrincipal principal) {
-        if (principal.getRole() != UserRole.ADMIN) throw new ForbiddenException("Admin only");
+        if (principal.getRole() != UserRole.ADMIN && principal.getRole() != UserRole.FACULTY) {
+            throw new ForbiddenException("Admin only");
+        }
         return Map.of(
                 "totals", adminStats(principal),
                 "generatedAt", java.time.Instant.now().toString()
         );
     }
 }
-
